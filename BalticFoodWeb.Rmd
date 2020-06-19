@@ -1,0 +1,385 @@
+---
+title: "Qualitative and quantitative description of the food web in Gulf of Riga"
+author: "R. Frelat and S. Kortsch"
+date: "Last update: 22nd June 2020"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document provides an introduction to marine food web analyses. The tutorial targets students and scientists in marine biology and ecology with previous knowledge of the [R software](https://cran.r-project.org/). 
+
+It is also the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. 
+
+Please also consult the tutorial by Ognyanova, K. (2016) [Network analysis with R and igraph: NetSci X Tutorial](https://kateto.net/networks-r-igraph) for a detailed introduction to network analysis in R. 
+
+# Preliminaries
+
+The analyses require the R packages [igraph (v ≥ 1.2.4)](https://igraph.org/) and [fluxweb (v ≥ 0.2.0)](https://www.biorxiv.org/content/early/2017/12/06/229450).
+
+```{r, message=FALSE}
+library(igraph)
+library(fluxweb)
+```
+
+If you get an error message, check that the R packages `igraph` and `fluxweb` have been installed correctly. If not, use the command: `install.packages(c("igraph", "fluxweb")`.
+
+The metaweb food web of the Gulf of Riga is available as the Rdata file `BalticFW.Rdata`, available for download [here](https://github.com/rfrelat/BalticFoodWeb/raw/master/BalticFoodWeb.zip).  
+
+Using the Gulf of Riga food web and this script, you will learn how to compute different qualitative and quantitative network metrics to describe food webs.
+
+# 1. Load and visualize the food web
+
+## 1.1 Load the dataset
+
+Make sure the file `BalticFW.Rdata` is in your working directory, then load it in R.
+
+```{r}
+load("BalticFW.Rdata")
+```
+
+The Rdata file contains two objects: `net` which is the `igraph` network of the Gulf of Riga food web, and `info` which is a `data.frame` containing information about each taxon. It also contains three custom-written functions that will be used in this script.
+
+```{r}
+vcount(net)
+ecount(net)
+```
+
+The metaweb `net` has 34 nodes and 207 trophic links.
+
+```{r}
+dim(info)
+names(info)
+```
+
+The data.frame `info` has 34 rows corresponding to the 34 nodes or taxa in the metaweb; and 11 variables which are:  
+
+- species: name of taxa
+- fg: functional group of each taxa. There are 5 categories: Benthos, Fish, Phytoplankton, Zooplankton, and Detritus.
+- nbY : number of year a taxa was recorded within the period 1979 - 2016
+- meanB : average biomass for each taxon over the period 1979 - 2016
+- taxon, met.types and org.types: classifications of taxa based on their taxonomy, metabolism type and organism type.
+- bodymass: average body mass (in g) of an adult taxon.
+- losses and efficiencies: metabolic parameters estimated using the `fluxweb` R package
+
+
+## 1.2 Visualization of the food web
+
+We will plot the food web using a custom-written function called `plotfw`, but first we will assign colors to the nodes depending on which functional group they belong to.
+```{r}
+# See the functional group categories 
+levels(info$fg)
+# Color the functional groups
+colFG<- c("orange", "darkgrey", "blue", "green", "cyan")
+# Assign the colors to each node (taxon)
+info$colfg <- colFG[as.numeric(info$fg)]
+
+# Plot the foodweb
+# Nodes are colored (col) according to functional group 
+# Links (edge) size is reduced with edge.width and edge.arrow.size
+plotfw(net, col=info$colfg, 
+       edge.width=0.3, edge.arrow.size=0.3)
+```
+
+## 1.3 Overview of the food web
+
+The function `degree()` returns the number of links per node (in-degree, out-degree or both). This is useful to quickly check the food web. For example, we can identify which are the basal species (no prey, i.e. 0 in-degree) and the top predators (no predators, i.e. 0 out-degree).
+
+```{r}
+# basal species 
+V(net)$name[degree(net, mode="in")==0]
+
+# top predators 
+V(net)$name[degree(net, mode="out")==0]
+```
+
+Three nodes classified as basal taxa: autotroph phytoplankon, mixotroph phytoplankton, and detritus. Only one species, cod (*Gadus morhua*), does not have any predators in our food web, and hence is the only top predator. 
+
+We can also plot the food web as an interaction matrix (called adjacency matrix), where the columns are the consumers and the rows the resources.
+
+```{r}
+netmatrix <- get.adjacency(net, sparse=F)
+heatmap(netmatrix, Rowv=NA, Colv=NA, scale="none")
+```
+
+It is important to note that the food web doesn't include cannibalism (e.g. it is known that cod preys upon itself, but this is ignored here). This influences how some of the food web metrics are computed.
+
+# 2. Topological indicators
+Topological metrics are qualitative, i.e. they are based on presence/absence of species (or binary networks).
+
+## 2.1 Species richness
+
+Species richness (S) is the number of taxa in the food web, i.e. the number of nodes. The Gulf of Riga food web contains 34 taxa
+```{r}
+S <- vcount(net)
+S
+```
+
+## 2.2 Connectance
+
+Connectance (C) is the proportion of directed links realized out of the maximum number of possible links. Because self-loops (cannibalistic links) were removed, the number of possible links is not $S^2$ as with cannibalism included, but $S*(S-1)$, therefore $$C=\frac{L}{S*(S-1)}$$
+
+```{r}
+C <- ecount(net)/(S*(S-1))
+# same results with edge_density(net, loops=F) 
+C
+```
+
+## 2.3 Generality and vulnerability
+
+Generality is the number of resources per taxon, and vulnerability is the number of consumers per taxon.
+```{r}
+# Generality
+# Identify predator nodes, i.e. taxa with at least one prey
+pred <- degree(net, mode="in")>0
+# Compute mean generality of the food web, i.e. mean number of prey per predators
+G <- sum(degree(net, mode="in")[pred])/sum(pred)
+G
+
+# Vulnerability
+# Identify prey nodes, i.e. taxa with at least one predator
+prey <- degree(net, mode="out")>0
+# Compute the mean vulnerability, i.e. mean number of predators per prey
+V <- sum(degree(net, mode="out")[prey])/sum(prey)
+V
+```
+
+## 2.4 Mean shortest path
+The mean shortest path, connecting each pair of species in a food web, is an indirect indicator of stability; because the stability of food web chains may depend on their length. Short chains are more stable than long chains. Food chains may lengthen in more productive ecosystems (Kaunzinger and Morin 1998, Borrelli and Ginzburg 2014).
+
+```{r}
+# shortest path length between all pair of nodes
+sp <- shortest.paths(net)
+# Mean shortest path length between different species
+# [upper.tri(sp)] remove the diagonal.
+# Diagonal is by default set to 0 (path to itself)
+# which artificially lower the mean shortest path.
+ShortPath <- mean(sp[upper.tri(sp)]) 
+ShortPath
+```
+
+## 2.5 Trophic level
+
+Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have TL= 1, and obligate herbivores are TL = 2. The TL function `trophiclevels()` is custom-written, and uses short-weighted trophic levels, i.e. the average shortest path to basal species of all prey + 1, to calculate TL (Williams and Martinez 2004, de Santana et al. 2013). 
+
+```{r}
+# Compute the trophic level for each node  
+tlnodes <- trophiclevels(net)
+# Calculate the average trophic level of the food web
+TL <- mean(tlnodes)
+TL
+```
+
+## 2.6 Omnivory
+
+Omnivory is based on the calculation of trophic levels, and corresponds to the standard deviation of the trophic levels of a species' prey. 
+```{r}
+# netmatrix <- get.adjacency(net, sparse=F)
+# Link the trophic level to the interactions
+webtl <- netmatrix*tlnodes
+# Remove the trophic level when no interactions
+webtl[webtl==0] <- NA
+  
+#Compute the standard of the trophic levels of prey 
+omninodes <- apply(webtl,2,sd, na.rm=TRUE)
+
+# Average the standard deviation over all taxa (with more than 2 preys)  
+Omni <- mean(omninodes, na.rm=TRUE)
+Omni
+
+```
+
+
+# 3. Node-weighted indicators
+
+## 3.1 Concept and visualization
+
+The previous topological metrics were based on species' presence/absence. In order to capture how changes in dominance can affect a food web descriptor, we calculated node-weighted metrics (Olivier et al. 2019). These metrics are "weighted averages of metrics" based on taxa biomass at the node level. In other words, a species with (relatively) high biomass would have stronger impact on a node-weighted food web metric than a species with (relatively) low biomass.
+Here we use as the average biomass over the period 1979-2016 as weighted coefficients (variable `meanB`). 
+
+First, let's have a look at the distribution of biomass among main functional guilds (e.g. benthos or fish).
+
+```{r}
+#Rename the variable to shorten the R code
+biomass <- info$meanB
+
+#Define the colors of the main functional guilds
+colFG <- c("orange", "darkgrey", "blue", "green", "cyan")
+par(mfrow=c(1,2), mar=c(7,4,1,1))
+boxplot(biomass~info$fg, las=2, col=colFG,
+        ylab="Biomass (g/day/km2)", xlab="")
+
+#Calculate percentage biomass per functional group
+percB <- tapply(biomass, info$fg, sum)/sum(biomass)*100
+barplot(as.matrix(percB), col=colFG, ylab="%")
+```
+
+We can also visualize the biomass of nodes in the food web by adjusting their size according to their mean biomass.
+
+```{r}
+#Visual representation parameter
+Vscale <- 25 #multiplying factor
+Vmin <- 4 #minimum size of the node
+#scale the size of the node to the mean biomass
+nodmax <- max(biomass)
+sizeB <- (biomass/nodmax)*Vscale +Vmin
+
+#Plot the food web
+plotfw(net, col=info$colfg, size=sizeB,
+       edge.width=0.3, edge.arrow.size=0.3)
+```
+
+
+## 3.2 Node-weighted Connectance
+Node-weighted connectance (nwC) is the weighted average of links per nodes, divided by the number of nodes (-1, because we discarded cannibalistic links). 
+```{r}
+#Weighted connectance
+nwC <- sum(degree(net)*biomass)/(2*sum(biomass)*(vcount(net)-1))
+nwC
+```
+
+## 3.3 Node-weighted Generality and Vulnerability
+Node-weighted generality and vulnerability are the biomass-weighted averages of prey per predators and of predators per prey, respectively.
+
+```{r}
+# Node-weighted generality
+# Identify predators, i.e. taxa with at least one prey
+pred <- degree(net, mode="in")>0
+# Compute weigthed in-degree average among predators
+nwG <- sum((degree(net, mode="in")*biomass)[pred])/(sum(biomass[pred]))
+nwG
+
+# Node-weighted vulnerability
+# Identify prey, i.e. taxa with at least one predator
+prey <- degree(net, mode="out")>0
+# Compute weigthed out-degree average among prey
+nwV <- sum((degree(net, mode="out")*biomass)[prey])/(sum(biomass[prey]))
+nwV
+```
+
+## 3.4 Node-weighted Trophic level
+
+The node-weighted trophic level is the average of trophic level weighted by the biomass.
+
+```{r}
+# tlnodes <- trophiclevels(net)
+# Compute a weighted average of trophic levels
+nwTL <- sum(tlnodes*biomass)/sum(biomass)
+nwTL
+```
+
+
+# 4. Fluxweb and estimating biomass fluxes 
+
+## 4.1 Set the parameters of the Fluxweb model.
+Implementation of the energetic food web model using the fluxweb R package is thoroughly explained in Gauzens et al. (2018). 
+
+In short, the model assumes system equilibrium, which implies that each species’ losses due to predation and physiological processes is balanced by the metabolized energy it gains from consumption (Barnes et al. 2018):
+$$intake = losses + metabolism $$
+
+
+In order to calculate *node metabolism*, species-specific metabolic rates were derived from body mass metabolic relationships using the classic allometric equation (Brown et al. 2004). 
+$$X_i=(x_0*M_i^a*e^{(-\frac{E}{B}T)})*b_i$$
+
+
+Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=0.71$), and $b_i$ is the biomass of species i. 
+
+
+The $x0$ normalization constants are the intercepts of the body mass-metabolism scaling relationship for invertebrates and vertebrates presented in the paper by Brown et al. (17.17 for invertebrates, 18.47 for vertebrates). 
+
+
+Since metabolic rates increase exponentially with temperature (Brown et al. 2004), they were adjusted to account for effects from ambient temperature $T$ (T=3.5°C = 276.65K), which is the mean temperature at the bottom in the Gulf of Riga in spring. 
+
+
+Body mass estimates were based on field data from the Gulf of Riga and Baltic Sea, and contained in the variable `bodymasses`. References for each body mass estimate are available via the Dryad Repository *link will be added* 
+
+
+To account for differences in resource quality, the *assimilation efficiencies* were defined depending on prey type:  
+
+- 0.906 for animal prey (Gauzens et al. 2018)  
+- 0.77 for phytoplankton prey (Landry et al. 1984)   
+- 0.4 for detritus diet (Gergs and Rothhaupt 2008).  
+
+
+As biomass per taxon were calculated in grams per m$^2$, the units of the fluxes F are joules per m$^2$ per day.  All parameters are in the `info` table.
+
+## 4.2 Calculate the fluxes between nodes
+
+
+```{r}
+# netmatrix <- get.adjacency(net, sparse=F)
+fluxes <- fluxing(netmatrix, biomass, info$losses, 
+                 info$efficiencies, ef.level="prey")
+# conversion from J/sec to kJ/day 
+# 1 J/sec = 86.4 kJ/day (there are 86400 sec/day)
+fluxes <- fluxes*86.4
+```
+
+Fluxes can be visualized in a weighted interaction matrix, where columns are consumers and rows prey. Fluxes are log-transformed to help visualize the flows. 
+```{r}
+heatmap(log(fluxes+0.00001), Rowv=NA, Colv=NA, scale="none")
+```
+
+## 4.3 Visualize fluxes
+
+```{r}
+# Create a network with link weights
+netLW <- graph_from_adjacency_matrix(fluxes, weighted=TRUE)
+
+# Set visual parameters
+Escale <- 15 #multiplying coefficient
+Emin <- 0.1 #minimum width 
+
+# Calculate the width of the arrows
+wid <- Emin+(E(netLW)$weight/max(E(netLW)$weight)*Escale)
+
+# Remove the border of the frame
+V(netLW)$frame.color=NA
+
+# Plot the network
+plotfw(netLW, col=info$colfg,
+       edge.width=wid, edge.arrow.size=0.05)
+```
+
+## 4.4 Link weighted indicators
+
+The estimated energy fluxes are used to compute quantitative, link-weighted metrics. Calculations are based  the Shannon diversity (H) index (Shannon 1948, Bersier et al. 2002). Following the approach by Bersier et al. (2002), we calculated the effective number of prey and predators of each taxon in the food web (Ulanowicz and Wolff 1991), and weighted these by the relative in- and out-flows of each taxon to assess their energetic and functional importance. 
+
+Link-weighted connectance, generality and vulnerability can be computed using the custom-written function `fluxind()` .
+
+```{r}
+fluxind(fluxes)
+```
+
+
+# References
+
+
+Bersier, L. F., Banašek-Richter, C., & Cattin, M. F. (2002). Quantitative descriptors of food‐web matrices. Ecology, 83(9), 2394-2407.  
+
+Borrelli, J. J., & Ginzburg, L. R. (2014). Why there are so few trophic levels: selection against instability explains the pattern. Food Webs, 1(1-4), 10-17.    
+
+Brown, J. H., J.F- Gillooly, A.P. Allen, V. M. Savage, and G. B. West. 2004. Toward a metabolic theory of ecology. Ecology 85: 1771– 1789.   
+
+Gauzens, B., A.  Barnes, D.P. Giling, J. Hines, M. Jochum, J. S. Lefcheck, B. Rosenbaum, S. Wang, and U. Brose. 2019. fluxweb: An R package to easily estimate energy fluxes in food webs. Methods in Ecology and Evolution 10: 270-279.  
+
+Gergs, R. and K. O. Rothhaupt (2008). Feeding rates, assimilation efficiencies and growth of two amphipod species on biodeposited material from zebra mussels. Freshwater Biology 53: 2494-2503.   
+
+Kaunzinger, C. M., & Morin, P. J. (1998). Productivity controls food-chain properties in microbial communities. Nature, 395(6701), 495-497.  
+
+Landry, M. R., Haas, L. W., & Fagerness, V. (1984). Dynamics of microbial plankton communities: experiments in Kaneohe Bay, Hawaii. Marine Ecology Progress Series, 16, 127.  
+
+Olivier P, R. Frelat F, E. Bonsdorff, S. Kortsch, I. Kröncke, C. Möllmann, H. Neumann, A. F. Sell, and M. C. Nordström. 2019. Exploring the temporal variability of a food web using long-term biomonitoring data. Ecography 42: 1-15.  
+
+de Santana, C. N., Rozenfeld, A. F., Marquet, P. A., & Duarte, C. M. (2013). Topological properties of polar food webs. Marine ecology progress series, 474, 15-26.  
+
+Shannon, C. E. (1948). A mathematical theory of communication. Bell system technical journal, 27(3), 379-423.
+
+Ulanowicz, R. E., & Wolff, W. F. (1991). Ecosystem flow networks: loaded dice?. Mathematical Biosciences, 103(1), 45-68.
+
+Williams, R. J., & Martinez, N. D. (2004). Limits to trophic levels and omnivory in complex food webs: theory and data. The American Naturalist, 163(3), 458-468.  
