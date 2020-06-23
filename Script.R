@@ -1,7 +1,7 @@
-# Qualitative and quantitative description of the food web in Gulf of Riga
+# Qualitative and quantitative descriptions of food webs: the Gulf of Riga case study
 # Introduction to marine food web analyses
 # By R. Frelat and S. Kortsch
-# Last update: 22nd June 2020
+# Last update: 23rd June 2020
 
 # For more information, see https://rfrelat.github.io/BalticFoodWeb.html
 

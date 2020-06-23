@@ -1,7 +1,7 @@
 ---
-title: "Qualitative and quantitative description of the food web in Gulf of Riga"
+title: "Qualitative and quantitative descriptions of food webs: the Gulf of Riga case study"
 author: "R. Frelat and S. Kortsch"
-date: "Last update: 22nd June 2020"
+date: "Last update: 23rd June 2020"
 output:
   html_document: default
   word_document: default
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document provides an introduction to marine food web analyses. The tutorial targets students and scientists in marine biology and ecology with previous knowledge of the [R software](https://cran.r-project.org/). 
 
-It is also the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. 
+It is also the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
 Please also consult the tutorial by Ognyanova, K. (2016) [Network analysis with R and igraph: NetSci X Tutorial](https://kateto.net/networks-r-igraph) for a detailed introduction to network analysis in R. 
 
@@ -50,14 +50,14 @@ vcount(net)
 ecount(net)
 ```
 
-The metaweb `net` has 34 nodes and 207 trophic links.
+The metaweb `net` has `r vcount(net)` nodes and `r ecount(net)` trophic links.
 
 ```{r}
 dim(info)
 names(info)
 ```
 
-The data.frame `info` has 34 rows corresponding to the 34 nodes or taxa in the metaweb; and 11 variables which are:  
+The data.frame `info` has `r nrow(info)` rows corresponding to the 34 nodes or taxa in the metaweb; and `r ncol(info)` variables which are:  
 
 - species: name of taxa
 - fg: functional group of each taxa. There are 5 categories: Benthos, Fish, Phytoplankton, Zooplankton, and Detritus.
@@ -114,7 +114,7 @@ Topological metrics are qualitative, i.e. they are based on presence/absence of 
 
 ## 2.1 Species richness
 
-Species richness (S) is the number of taxa in the food web, i.e. the number of nodes. The Gulf of Riga food web contains 34 taxa
+Species richness (S) is the number of taxa in the food web, i.e. the number of nodes. The Gulf of Riga food web contains `r vcount(net)` taxa
 ```{r}
 S <- vcount(net)
 S
@@ -165,7 +165,7 @@ ShortPath
 
 ## 2.5 Trophic level
 
-Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have TL= 1, and obligate herbivores are TL = 2. The TL function `trophiclevels()` is custom-written, and uses short-weighted trophic levels, i.e. the average shortest path to basal species of all prey + 1, to calculate TL (Williams and Martinez 2004, de Santana et al. 2013). 
+Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have $TL= 1$, and obligate herbivores are $TL = 2$. The TL function `trophiclevels()` is custom-written, and uses short-weighted trophic levels, i.e. the average shortest path to basal species of all prey + 1, to calculate TL (Williams and Martinez 2004, de Santana et al. 2013). 
 
 ```{r}
 # Compute the trophic level for each node  
@@ -296,7 +296,7 @@ The $x0$ normalization constants are the intercepts of the body mass-metabolism 
 Since metabolic rates increase exponentially with temperature (Brown et al. 2004), they were adjusted to account for effects from ambient temperature $T$ (T=3.5°C = 276.65K), which is the mean temperature at the bottom in the Gulf of Riga in spring. 
 
 
-Body mass estimates were based on field data from the Gulf of Riga and Baltic Sea, and contained in the variable `bodymasses`. References for each body mass estimate are available via the Dryad Repository *link will be added* 
+Body mass estimates were based on field data from the Gulf of Riga and Baltic Sea, and contained in the variable `bodymasses`. References for each body mass estimate are available via the Dryad Repository [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
 
 To account for differences in resource quality, the *assimilation efficiencies* were defined depending on prey type:  
@@ -306,17 +306,16 @@ To account for differences in resource quality, the *assimilation efficiencies* 
 - 0.4 for detritus diet (Gergs and Rothhaupt 2008).  
 
 
-As biomass per taxon were calculated in grams per m$^2$, the units of the fluxes F are joules per m$^2$ per day.  All parameters are in the `info` table.
+As biomass per taxon were calculated in grams per m$^2$, the units of the fluxes F are joules per m$^2$ per secondes  All parameters are in the `info` table.
 
 ## 4.2 Calculate the fluxes between nodes
-
 
 ```{r}
 # netmatrix <- get.adjacency(net, sparse=F)
 fluxes <- fluxing(netmatrix, biomass, info$losses, 
                  info$efficiencies, ef.level="prey")
-# conversion from J/sec to kJ/day 
-# 1 J/sec = 86.4 kJ/day (there are 86400 sec/day)
+# conversion from J/m2/sec to kJ/m2/day 
+# 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)
 fluxes <- fluxes*86.4
 ```
 
