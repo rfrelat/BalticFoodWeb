@@ -1,7 +1,7 @@
 ---
 title: "Qualitative and quantitative descriptions of food webs: the Gulf of Riga case study"
-author: "R. Frelat and S. Kortsch"
-date: "Last update: 23rd June 2020"
+author: "Kortsch, S.; Frelat, R.; Pecuchet, L.; Olivier, P.; Putnis, I.; Bonsdorff, E.; Ojaveer, H.; Jurgensone, I.; Strake, S.; Rubene, G.; Kruze, E.; Nordström, M."
+date: "Last update: 6th November 2020"
 output:
   html_document: default
   word_document: default
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document provides an introduction to marine food web analyses. The tutorial targets students and scientists in marine biology and ecology with previous knowledge of the [R software](https://cran.r-project.org/). 
 
-It is also the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
+It is the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
 Please also consult the tutorial by Ognyanova, K. (2016) [Network analysis with R and igraph: NetSci X Tutorial](https://kateto.net/networks-r-igraph) for a detailed introduction to network analysis in R. 
 
@@ -287,7 +287,9 @@ In order to calculate *node metabolism*, species-specific metabolic rates were d
 $$X_i=(x_0*M_i^a*e^{(-\frac{E}{B}T)})*b_i$$
 
 
-Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=0.71$), and $b_i$ is the biomass of species i. 
+Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=-0.29$), and $b_i$ is the biomass of species i. 
+
+**Note that $a=0.71$ when the equation consider the abundance (in number per m$^2$) instead of the biomass (in g per m$^2$) of species i (0.71 comes from 1-0.29).**
 
 
 The $x0$ normalization constants are the intercepts of the body mass-metabolism scaling relationship for invertebrates and vertebrates presented in the paper by Brown et al. (17.17 for invertebrates, 18.47 for vertebrates). 
@@ -345,7 +347,24 @@ plotfw(netLW, col=info$colfg,
        edge.width=wid, edge.arrow.size=0.05)
 ```
 
-## 4.4 Link weighted indicators
+## 4.4 Estimate the fluxes per feeding guild
+
+```{r, out.width="50%", fig.align = "center"}
+#Compute the total fluxes
+sumF <- sum(fluxes)
+#Compute the sum of the out-fluxes per species
+influx <- apply(fluxes,1,sum)
+#Aggregate per feeding guild
+perF <- tapply(influx,info$fg,sum) / sumF *100
+
+names(perF) <- c("Benthivory", "Detrivory", "Piscivory",
+                 "Phytoplanktivory", "Zooplanktivory")
+#Visualize the proportion of out-fluxes per functional guild
+barplot(as.matrix(perF), col=colFG, ylab="%",
+        legend=TRUE, args.legend=list(x="center"))
+```
+
+## 4.5 Link weighted indicators
 
 The estimated energy fluxes are used to compute quantitative, link-weighted metrics. Calculations are based  the Shannon diversity (H) index (Shannon 1948, Bersier et al. 2002). Following the approach by Bersier et al. (2002), we calculated the effective number of prey and predators of each taxon in the food web (Ulanowicz and Wolff 1991), and weighted these by the relative in- and out-flows of each taxon to assess their energetic and functional importance. 
 

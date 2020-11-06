@@ -178,5 +178,22 @@ V(netLW)$frame.color=NA
 plotfw(netLW, col=info$colfg,
        edge.width=wid, edge.arrow.size=0.05)
 
+
+# Estimate the fluxes per feeding guild
+# Compute the total fluxes
+sumF <- sum(fluxes)
+# Compute the sum of the out-fluxes per species
+influx <- apply(fluxes,1,sum)
+
+# Aggregate per feeding guild and compute the percentage
+perF <- tapply(influx,info$fg,sum) / sumF *100
+
+names(perF) <- c("Benthivory", "Detrivory", "Piscivory",
+                 "Phytoplanktivory", "Zooplanktivory")
+
+# Visualize the proportion of out-fluxes per functional guild
+barplot(as.matrix(perF), col=colFG, ylab="%",
+        legend=TRUE, args.legend=list(x="center"))
+
 # Link weighted indicators
 fluxind(fluxes)
