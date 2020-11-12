@@ -23,7 +23,7 @@ names(info)
 # See the functional group categories 
 levels(info$fg)
 # Color the functional groups
-colFG<- c("orange", "darkgrey", "blue", "green", "cyan")
+colFG<- c("orange", "khaki", "blue", "green", "cyan")
 # Assign the colors to each node (taxon)
 info$colfg <- colFG[as.numeric(info$fg)]
 
@@ -87,7 +87,7 @@ TL
 
 # Omnivory
 # Link the trophic level to the interactions
-webtl <- netmatrix*tlnodes
+webtl <- netmatrix*as.vector(tlnodes)
 # Remove the trophic level when no interactions
 webtl[webtl==0] <- NA
 
@@ -169,7 +169,7 @@ Escale <- 15 #multiplying coefficient
 Emin <- 0.1 #minimum width 
 
 #Calculate the width of the arrows
-wid <- Emin+(E(netLW)$weight/max(E(netLW)$weight)*Escale)
+wid <- Emin+(sqrt(E(netLW)$weight)/max(sqrt(E(netLW)$weight))*Escale)
 
 # Remove the border of the frame
 V(netLW)$frame.color=NA

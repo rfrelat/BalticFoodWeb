@@ -1,7 +1,7 @@
 ---
 title: "Qualitative and quantitative descriptions of food webs: the Gulf of Riga case study"
-author: "Kortsch, S.; Frelat, R.; Pecuchet, L.; Olivier, P.; Putnis, I.; Bonsdorff, E.; Ojaveer, H.; Jurgensone, I.; Strake, S.; Rubene, G.; Kruze, E.; Nordström, M."
-date: "Last update: 6th November 2020"
+author: "Kortsch, S.; Frelat, R.; Pecuchet, L.; Olivier, P.; Putnis, I.; Bonsdorff, E.; Ojaveer, H.; Jurgensone, I.; Strake, S.; Rubene, G.; Kruze, E. and Nordström, M."
+date: "Last update: 12th November 2020"
 output:
   html_document: default
   word_document: default
@@ -75,7 +75,7 @@ We will plot the food web using a custom-written function called `plotfw`, but f
 # See the functional group categories 
 levels(info$fg)
 # Color the functional groups
-colFG<- c("orange", "darkgrey", "blue", "green", "cyan")
+colFG<- c("orange", "khaki", "blue", "green", "cyan")
 # Assign the colors to each node (taxon)
 info$colfg <- colFG[as.numeric(info$fg)]
 
@@ -165,7 +165,7 @@ ShortPath
 
 ## 2.5 Trophic level
 
-Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have $TL= 1$, and obligate herbivores are $TL = 2$. The TL function `trophiclevels()` is custom-written, and uses short-weighted trophic levels, i.e. the average shortest path to basal species of all prey + 1, to calculate TL (Williams and Martinez 2004, de Santana et al. 2013). 
+Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have $TL= 1$, and obligate herbivores are $TL = 2$. The TL function `trophiclevels()` is custom-written, and calculates *short-weighted trophic levels*, i.e. the average between the shortest TL (1 + the shortest chain length from a taxa to a basal species) and prey-averaged TL (1 + the mean TL of all the consumer's trophic resources) (Williams and Martinez 2004, de Santana et al. 2013). 
 
 ```{r}
 # Compute the trophic level for each node  
@@ -181,7 +181,7 @@ Omnivory is based on the calculation of trophic levels, and corresponds to the s
 ```{r}
 # netmatrix <- get.adjacency(net, sparse=F)
 # Link the trophic level to the interactions
-webtl <- netmatrix*tlnodes
+webtl <- netmatrix*as.vector(tlnodes)
 # Remove the trophic level when no interactions
 webtl[webtl==0] <- NA
   
@@ -208,8 +208,6 @@ First, let's have a look at the distribution of biomass among main functional gu
 #Rename the variable to shorten the R code
 biomass <- info$meanB
 
-#Define the colors of the main functional guilds
-colFG <- c("orange", "darkgrey", "blue", "green", "cyan")
 par(mfrow=c(1,2), mar=c(7,4,1,1))
 boxplot(biomass~info$fg, las=2, col=colFG,
         ylab="Biomass (g/day/km2)", xlab="")
@@ -337,7 +335,8 @@ Escale <- 15 #multiplying coefficient
 Emin <- 0.1 #minimum width 
 
 # Calculate the width of the arrows
-wid <- Emin+(E(netLW)$weight/max(E(netLW)$weight)*Escale)
+# proportional to the square root of the fluxes
+wid <- Emin+(sqrt(E(netLW)$weight)/max(sqrt(E(netLW)$weight))*Escale)
 
 # Remove the border of the frame
 V(netLW)$frame.color=NA
