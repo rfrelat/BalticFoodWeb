@@ -2,7 +2,7 @@
 
 Companion tutorial to :  
 
-**Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Sträke, G. Rubene, E. Krüze, and M. Nordström.
+**Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Sträke, G. Rubene, E. Krüze, and M. Nordström.
 
 The instructions can be found [online](https://rfrelat.github.io/BalticFoodWeb.html), or in a [zip folder](https://github.com/rfrelat/BalticFoodWeb/raw/master/BalticFoodWeb.zip) together with the data and the R-scripts.  
 

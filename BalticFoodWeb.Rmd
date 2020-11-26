@@ -1,5 +1,5 @@
 ---
-title: "Qualitative and quantitative descriptions of food webs: the Gulf of Riga case study"
+title: "Introduction to food webs metrics: the Gulf of Riga case study"
 author: "Kortsch, S.; Frelat, R.; Pecuchet, L.; Olivier, P.; Putnis, I.; Bonsdorff, E.; Ojaveer, H.; Jurgensone, I.; Strake, S.; Rubene, G.; Kruze, E. and Nordström, M."
 date: "Last update: 12th November 2020"
 output:
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document provides an introduction to marine food web analyses. The tutorial targets students and scientists in marine biology and ecology with previous knowledge of the [R software](https://cran.r-project.org/). 
 
-It is the companion tutorial for the paper: **Qualitative and quantitative network descriptors reveal complementary patterns of change in temporal food web dynamics** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
+It is the companion tutorial for the paper: **Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström, *in review*. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
 Please also consult the tutorial by Ognyanova, K. (2016) [Network analysis with R and igraph: NetSci X Tutorial](https://kateto.net/networks-r-igraph) for a detailed introduction to network analysis in R. 
 
@@ -31,7 +31,7 @@ If you get an error message, check that the R packages `igraph` and `fluxweb` ha
 
 The metaweb food web of the Gulf of Riga is available as the Rdata file `BalticFW.Rdata`, available for download [here](https://github.com/rfrelat/BalticFoodWeb/raw/master/BalticFoodWeb.zip).  
 
-Using the Gulf of Riga food web and this script, you will learn how to compute different qualitative and quantitative network metrics to describe food webs.
+Using the Gulf of Riga food web and this script, you will learn how to compute different weighted and unweighted network metrics to describe food webs.
 
 # 1. Load and visualize the food web
 
@@ -110,7 +110,7 @@ heatmap(netmatrix, Rowv=NA, Colv=NA, scale="none")
 It is important to note that the food web doesn't include cannibalism (e.g. it is known that cod preys upon itself, but this is ignored here). This influences how some of the food web metrics are computed.
 
 # 2. Topological indicators
-Topological metrics are qualitative, i.e. they are based on presence/absence of species (or binary networks).
+Topological metrics are unweigthed, i.e. they are based on presence/absence of species (or binary networks).
 
 ## 2.1 Species richness
 
@@ -165,7 +165,7 @@ ShortPath
 
 ## 2.5 Trophic level
 
-Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have $TL= 1$, and obligate herbivores are $TL = 2$. The TL function `trophiclevels()` is custom-written, and calculates *short-weighted trophic levels*, i.e. the average between the shortest TL (1 + the shortest chain length from a taxa to a basal species) and prey-averaged TL (1 + the mean TL of all the consumer's trophic resources) (Williams and Martinez 2004, de Santana et al. 2013). 
+Trophic level (TL) represents how many steps energy must take to get from an energy source (basal species) to a taxon higher upper in the food web. Basal taxa have $TL= 1$, and obligate herbivores are $TL = 2$. The function `trophiclevels()` is custom-written, and calculates *short-weighted trophic levels*, i.e. the average between the shortest TL (1 + the shortest chain length from a taxa to a basal species) and prey-averaged TL (1 + the mean TL of all the consumer's trophic resources) (Williams and Martinez 2004, de Santana et al. 2013). 
 
 ```{r}
 # Compute the trophic level for each node  
@@ -285,10 +285,9 @@ In order to calculate *node metabolism*, species-specific metabolic rates were d
 $$X_i=(x_0*M_i^a*e^{(-\frac{E}{B}T)})*b_i$$
 
 
-Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=-0.29$), and $b_i$ is the biomass of species i. 
+Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=-0.29$), and $b_i$ is the biomass of species i.  
 
-**Note that $a=0.71$ when the equation consider the abundance (in number per m$^2$) instead of the biomass (in g per m$^2$) of species i (0.71 comes from 1-0.29).**
-
+Note that the allometric scaling parameter $a$ should be set to $a=0.71$ when using abundance information (e.g. number per $m^2$) instead of biomass (e.g. g per $m^2$). The value 0.71 comes from 1-0.29.  
 
 The $x0$ normalization constants are the intercepts of the body mass-metabolism scaling relationship for invertebrates and vertebrates presented in the paper by Brown et al. (17.17 for invertebrates, 18.47 for vertebrates). 
 
@@ -365,7 +364,7 @@ barplot(as.matrix(perF), col=colFG, ylab="%",
 
 ## 4.5 Link weighted indicators
 
-The estimated energy fluxes are used to compute quantitative, link-weighted metrics. Calculations are based  the Shannon diversity (H) index (Shannon 1948, Bersier et al. 2002). Following the approach by Bersier et al. (2002), we calculated the effective number of prey and predators of each taxon in the food web (Ulanowicz and Wolff 1991), and weighted these by the relative in- and out-flows of each taxon to assess their energetic and functional importance. 
+The estimated energy fluxes are used to compute link-weighted metrics. Calculations are based  the Shannon diversity (H) index (Shannon 1948, Bersier et al. 2002). Following the approach by Bersier et al. (2002), we calculated the effective number of prey and predators of each taxon in the food web (Ulanowicz and Wolff 1991), and weighted these by the relative in- and out-flows of each taxon to assess their energetic and functional importance. 
 
 Link-weighted connectance, generality and vulnerability can be computed using the custom-written function `fluxind()` .
 
