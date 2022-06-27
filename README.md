@@ -2,7 +2,7 @@
 
 Companion tutorial to :  
 
-**Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Sträke, G. Rubene, E. Krüze, and M. Nordström.
+Kortsch, S., Frelat, R., Pecuchet, L., Olivier, P., Putnis, I., Bonsdorff, E., Ojaveer, H., Jurgensone, I., StrÄÄ·e, S., Rubene, G., KrÅ«ze, Ä’., and NordstrÃ¶m, M. C. (2021). **Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning**. *Journal of Animal Ecology*, 90(5), 1205-1216. DOI [10.1111/1365-2656.13447](https://doi.org/10.1111/1365-2656.13447).
 
 The instructions can be found [online](https://rfrelat.github.io/BalticFoodWeb.html), or in a [zip folder](https://github.com/rfrelat/BalticFoodWeb/raw/master/BalticFoodWeb.zip) together with the data and the R-scripts.  
 
