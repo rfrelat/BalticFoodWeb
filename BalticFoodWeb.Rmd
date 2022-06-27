@@ -1,7 +1,7 @@
 ---
 title: "Introduction to food webs metrics: the Gulf of Riga case study"
 author: "Kortsch, S.; Frelat, R.; Pecuchet, L.; Olivier, P.; Putnis, I.; Bonsdorff, E.; Ojaveer, H.; Jurgensone, I.; Strake, S.; Rubene, G.; Kruze, E. and Nordström, M."
-date: "Last update: 12th November 2020"
+date: "Last update: 27th June 2022"
 output:
   html_document: default
   word_document: default
@@ -14,7 +14,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document provides an introduction to marine food web analyses. The tutorial targets students and scientists in marine biology and ecology with previous knowledge of the [R software](https://cran.r-project.org/). 
 
-It is the companion tutorial for the paper: **Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning** by S. Kortsch, R. Frelat, L. Pecuchet, P. Olivier, I. Putnis, E. Bonsdorff, H. Ojaveer, I. Jurgensone, S. Strāķe, G. Rubene, Ē. Krūze, and M. Nordström, *in review*. More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
+It is the companion tutorial for the article:  
+Kortsch, S., Frelat, R., Pecuchet, L., Olivier, P., Putnis, I., Bonsdorff, E., Ojaveer, H., Jurgensone, I., Strāķe, S., Rubene, G., Krūze, Ē., and Nordström, M. C. (2021). **Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning**. *Journal of Animal Ecology*, 90(5), 1205-1216. DOI [10.1111/1365-2656.13447](https://doi.org/10.1111/1365-2656.13447). 
+
+More details about data and methodology can be found in the *Material and Methods* section of the paper and in the supplementary material. For example, definitions and equations of metrics can be found in Appendix S6: Table S1. The raw food web dataset can be found on Dryad, [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
 Please also consult the tutorial by Ognyanova, K. (2016) [Network analysis with R and igraph: NetSci X Tutorial](https://kateto.net/networks-r-igraph) for a detailed introduction to network analysis in R. 
 
@@ -282,7 +285,7 @@ $$intake = losses + metabolism $$
 
 
 In order to calculate *node metabolism*, species-specific metabolic rates were derived from body mass metabolic relationships using the classic allometric equation (Brown et al. 2004). 
-$$X_i=(x_0*M_i^a*e^{(-\frac{E}{B}T)})*b_i$$
+$$X_i=(e^{x_0}*M_i^a*e^{(-\frac{E}{BT})})*b_i$$
 
 
 Where $X_i$ is the metabolic losses, $M_i$ the body mass of species i, $x0$ is the organism-specific normalization constant, $a$ is the allometric scaling constant ($a=-0.29$), and $b_i$ is the biomass of species i.  
@@ -291,12 +294,35 @@ Note that the allometric scaling parameter $a$ should be set to $a=0.71$ when us
 
 The $x0$ normalization constants are the intercepts of the body mass-metabolism scaling relationship for invertebrates and vertebrates presented in the paper by Brown et al. (17.17 for invertebrates, 18.47 for vertebrates). 
 
-
 Since metabolic rates increase exponentially with temperature (Brown et al. 2004), they were adjusted to account for effects from ambient temperature $T$ (T=3.5°C = 276.65K), which is the mean temperature at the bottom in the Gulf of Riga in spring. 
-
 
 Body mass estimates were based on field data from the Gulf of Riga and Baltic Sea, and contained in the variable `bodymasses`. References for each body mass estimate are available via the Dryad Repository [DOI:10.5061/dryad.6t1g1jwwn](https://doi.org/10.5061/dryad.6t1g1jwwn).
 
+So let's compute the losses for each organism:
+
+```{r}
+boltz <- 0.00008617343  # Boltzmann constant
+temp<-3.5 # mean temperature in degree celsius
+a <- -0.29 # allometric scaling (for biomass)
+E <- 0.69 # activation energy
+#set the normalization constant (intercept of body-mass metabolism scaling relationship)
+losses_param <- list("invertebrates"= 17.17,
+                     "ectotherm vertebrates" = 18.47,
+                     "Other"= 0)
+info$x0 <- unlist(losses_param[info$met.types])
+
+losses <- exp((a * log(info$bodymasses) + info$x0) - E/(boltz*(273.15+temp)))
+```
+
+We can now use the `fluxing` function from `fluxweb` package:
+```{r}
+# netmatrix <- get.adjacency(net, sparse=F)
+fluxes <- fluxing(netmatrix, biomass, losses, 
+                 info$efficiencies, ef.level="prey")
+# conversion from J/m2/sec to kJ/m2/day 
+# 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)
+fluxes <- fluxes*86.4
+```
 
 To account for differences in resource quality, the *assimilation efficiencies* were defined depending on prey type:  
 
@@ -387,6 +413,8 @@ Gauzens, B., A.  Barnes, D.P. Giling, J. Hines, M. Jochum, J. S. Lefcheck, B. Ro
 Gergs, R. and K. O. Rothhaupt (2008). Feeding rates, assimilation efficiencies and growth of two amphipod species on biodeposited material from zebra mussels. Freshwater Biology 53: 2494-2503.   
 
 Kaunzinger, C. M., & Morin, P. J. (1998). Productivity controls food-chain properties in microbial communities. Nature, 395(6701), 495-497.  
+
+Kortsch, S., Frelat, R., Pecuchet, L., Olivier, P., Putnis, I., Bonsdorff, E., ... & Nordström, M. C. (2021). Disentangling temporal food web dynamics facilitates understanding of ecosystem functioning. Journal of Animal Ecology, 90(5), 1205-1216.
 
 Landry, M. R., Haas, L. W., & Fagerness, V. (1984). Dynamics of microbial plankton communities: experiments in Kaneohe Bay, Hawaii. Marine Ecology Progress Series, 16, 127.  
 
