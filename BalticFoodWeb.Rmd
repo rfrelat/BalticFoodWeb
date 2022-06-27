@@ -314,15 +314,6 @@ info$x0 <- unlist(losses_param[info$met.types])
 losses <- exp((a * log(info$bodymasses) + info$x0) - E/(boltz*(273.15+temp)))
 ```
 
-We can now use the `fluxing` function from `fluxweb` package:
-```{r}
-# netmatrix <- get.adjacency(net, sparse=F)
-fluxes <- fluxing(netmatrix, biomass, losses, 
-                 info$efficiencies, ef.level="prey")
-# conversion from J/m2/sec to kJ/m2/day 
-# 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)
-fluxes <- fluxes*86.4
-```
 
 To account for differences in resource quality, the *assimilation efficiencies* were defined depending on prey type:  
 
@@ -331,13 +322,13 @@ To account for differences in resource quality, the *assimilation efficiencies* 
 - 0.4 for detritus diet (Gergs and Rothhaupt 2008).  
 
 
-As biomass per taxon were calculated in grams per m$^2$, the units of the fluxes F are joules per m$^2$ per secondes  All parameters are in the `info` table.
+As biomass per taxon were calculated in grams per m$^2$, the units of the fluxes F are joules per m$^2$ per secondes  The assimilation efficiencies are already attributed to each species in the column `efficiencies` of the `info` table.
 
 ## 4.2 Calculate the fluxes between nodes
 
 ```{r}
 # netmatrix <- get.adjacency(net, sparse=F)
-fluxes <- fluxing(netmatrix, biomass, info$losses, 
+fluxes <- fluxing(netmatrix, biomass, losses, 
                  info$efficiencies, ef.level="prey")
 # conversion from J/m2/sec to kJ/m2/day 
 # 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)

@@ -420,13 +420,6 @@ losses_param &lt;- list(&quot;invertebrates&quot;= 17.17,
 info$x0 &lt;- unlist(losses_param[info$met.types])
 
 losses &lt;- exp((a * log(info$bodymasses) + info$x0) - E/(boltz*(273.15+temp)))</code></pre>
-<p>We can now use the <code>fluxing</code> function from <code>fluxweb</code> package:</p>
-<pre class="r"><code># netmatrix &lt;- get.adjacency(net, sparse=F)
-fluxes &lt;- fluxing(netmatrix, biomass, losses, 
-                 info$efficiencies, ef.level=&quot;prey&quot;)
-# conversion from J/m2/sec to kJ/m2/day 
-# 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)
-fluxes &lt;- fluxes*86.4</code></pre>
 <p>To account for differences in resource quality, the <em>assimilation efficiencies</em> were defined depending on prey type:</p>
 <ul>
 <li>0.906 for animal prey (Gauzens et al. 2018)<br />
@@ -435,12 +428,12 @@ fluxes &lt;- fluxes*86.4</code></pre>
 </li>
 <li>0.4 for detritus diet (Gergs and Rothhaupt 2008).</li>
 </ul>
-<p>As biomass per taxon were calculated in grams per m<span class="math inline">\(^2\)</span>, the units of the fluxes F are joules per m<span class="math inline">\(^2\)</span> per secondes All parameters are in the <code>info</code> table.</p>
+<p>As biomass per taxon were calculated in grams per m<span class="math inline">\(^2\)</span>, the units of the fluxes F are joules per m<span class="math inline">\(^2\)</span> per secondes The assimilation efficiencies are already attributed to each species in the column <code>efficiencies</code> of the <code>info</code> table.</p>
 </div>
 <div id="calculate-the-fluxes-between-nodes" class="section level2">
 <h2>4.2 Calculate the fluxes between nodes</h2>
 <pre class="r"><code># netmatrix &lt;- get.adjacency(net, sparse=F)
-fluxes &lt;- fluxing(netmatrix, biomass, info$losses, 
+fluxes &lt;- fluxing(netmatrix, biomass, losses, 
                  info$efficiencies, ef.level=&quot;prey&quot;)
 # conversion from J/m2/sec to kJ/m2/day 
 # 1 J/m2/sec = 86.4 kJ/m2/day (there are 86400 sec/day)
